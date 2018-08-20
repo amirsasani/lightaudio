@@ -4,7 +4,7 @@
     "description": "a lightweight audio player",
     "main": "index.js",
     "scripts": {
-        "start": "parcel index.html",
+        "serve": "parcel index.html",
         "watch": "parcel watch index.html",
         "build": "parcel build index.html --no-source-maps --experimental-scope-hoisting --out-dir build"
     },

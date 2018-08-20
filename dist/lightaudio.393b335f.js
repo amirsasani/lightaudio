@@ -233,12 +233,10 @@ var CircularMode = function () {
                 var slice_angle = 2 * Math.PI * val / 360;
                 var color = "#F6F49D";
 
-                this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, Math.min(this.canvas.width / 2, this.canvas.height / 2, (this.canvas.width / 2, this.canvas.height / 2) - val), start_angle, start_angle + slice_angle, color);
+                this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.5 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, color);
 
                 start_angle += slice_angle;
             }
-
-            this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.5 * Math.min(this.canvas.width / 2, this.canvas.height / 2), 0, 2 * Math.PI, "#fff");
         }
     }, {
         key: "drawPieSlice",
@@ -249,6 +247,24 @@ var CircularMode = function () {
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.closePath();
             ctx.fill();
+        }
+    }, {
+        key: "drawAudioThumbnail",
+        value: function drawAudioThumbnail(ctx, centerX, centerY, radius, startAngle, endAngle, img) {
+            ctx.save();
+            ctx.moveTo(centerX, centerY);
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.closePath();
+            ctx.clip();
+
+            ctx.drawImage(img, 0, 0, 50, 50);
+
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+            ctx.clip();
+            ctx.closePath();
+            ctx.restore();
         }
     }]);
 
@@ -281,9 +297,9 @@ module.bundle.Module = Module;
 
 var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
-  var hostname = '' || location.hostname;
+  var hostname = undefined || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '63851' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53484' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 

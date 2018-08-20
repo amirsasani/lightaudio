@@ -55,11 +55,16 @@ class CircularMode {
                 this.ctx,
                 this.canvas.width / 2,
                 this.canvas.height / 2,
-                Math.min(
-                    this.canvas.width / 2,
-                    this.canvas.height / 2,
-                    (this.canvas.width / 2, this.canvas.height / 2) - val
-                ),
+                0.5 *
+                    Math.min(
+                        this.canvas.width / 2,
+                        this.canvas.height / 2,
+                        Math.max(
+                            (this.canvas.width / 2, this.canvas.height / 2) -
+                                val,
+                            0
+                        )
+                    ),
                 start_angle,
                 start_angle + slice_angle,
                 color
@@ -67,16 +72,6 @@ class CircularMode {
 
             start_angle += slice_angle;
         }
-
-        this.drawPieSlice(
-            this.ctx,
-            this.canvas.width / 2,
-            this.canvas.height / 2,
-            0.5 * Math.min(this.canvas.width / 2, this.canvas.height / 2),
-            0,
-            2 * Math.PI,
-            "#fff"
-        );
     }
 
     drawPieSlice(ctx, centerX, centerY, radius, startAngle, endAngle, color) {
@@ -86,5 +81,30 @@ class CircularMode {
         ctx.arc(centerX, centerY, radius, startAngle, endAngle);
         ctx.closePath();
         ctx.fill();
+    }
+
+    drawAudioThumbnail(
+        ctx,
+        centerX,
+        centerY,
+        radius,
+        startAngle,
+        endAngle,
+        img
+    ) {
+        ctx.save();
+        ctx.moveTo(centerX, centerY);
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.closePath();
+        ctx.clip();
+
+        ctx.drawImage(img, 0, 0, 50, 50);
+
+        ctx.beginPath();
+        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
+        ctx.clip();
+        ctx.closePath();
+        ctx.restore();
     }
 }
