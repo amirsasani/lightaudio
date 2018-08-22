@@ -1,7 +1,19 @@
+@mixin border-radius($value) {
+    -moz-border-radius: $value;
+    -o-border-radius: $value;
+    -ms-border-radius: $value;
+    -webkit-border-radius: $value;
+    border-radius: $value;
+}
+
 .lightaudio__container {
+    canvas {
+        cursor: pointer;
+        @include border-radius(10px);
+    }
 }
 
 .audio {
-    width: 640px;
-    height: 640px;
+    width: 250px;
+    height: 250px;
 }

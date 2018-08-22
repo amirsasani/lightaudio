@@ -1,9 +1,22 @@
 import { CircularMode } from "./CircularMode";
+
 export class LightAudio {
     constructor(options) {
         this.parent = options.parent;
-        this.color = options.color || "#f1c40f";
+        this.audioTitle = options.audioTitle || "";
+        const _thumb = options.thumbnail || this.parent.querySelector("img");
+        const _audio = this.parent.querySelector("audio");
+
+        this.removeUnsusedElements(_thumb, _audio);
+
+        const _rgb = this.getAverageRGB(this.thumbnail);
+        this.color =
+            options.color ||
+            `rgba(${255 - _rgb.r}, ${255 - _rgb.g}, ${255 - _rgb.b}, 0.7)`;
+
+        this.thumbnail.style.display = "none";
         this.init();
+        this.textX = 5;
     }
 
     init() {
@@ -11,35 +24,160 @@ export class LightAudio {
         this.initAudio();
     }
 
+    removeUnsusedElements(_thumb, _audio) {
+        this.thumbnail = _thumb.cloneNode(true);
+        this.parent.removeChild(_thumb);
+
+        this.audio = _audio.cloneNode(true);
+        this.parent.removeChild(_audio);
+    }
+
     initCanvas() {
-        const canvas = document.createElement("CANVAS");
-        this.ctx = canvas.getContext("2d");
-        this.circularMode = new CircularMode(canvas);
-        canvas.width = this.parent.innerWidth;
-        canvas.height = this.parent.innerHeight;
-        this.parent.appendChild(canvas);
+        this.canvas = document.createElement("CANVAS");
+        this.ctx = this.canvas.getContext("2d");
+        this.circularMode = new CircularMode({
+            canvas: this.canvas,
+            ctx: this.ctx,
+            color: this.color
+        });
+        this.canvas.width = this.parent.offsetWidth;
+        this.canvas.height = this.parent.offsetHeight;
+        this.parent.appendChild(this.canvas);
+
+        this.canvas.addEventListener("mousedown", e => {
+            this.handleMouse(e);
+        });
     }
 
     initAudio() {
-        const audio = document.querySelector("audio");
-        // audio.controls = false; // TODO
+        this.audio.controls = false;
+
         const audioContext = new AudioContext() || window.webkitAudioContext;
-        const src = audioContext.createMediaElementSource(audio);
+        const src = audioContext.createMediaElementSource(this.audio);
         this.analyser = audioContext.createAnalyser();
         src.connect(this.analyser);
         this.analyser.connect(audioContext.destination);
         this.analyser.fftSize = 256;
         const bufferLength = this.analyser.frequencyBinCount;
+
         this.dataArray = new Uint8Array(bufferLength);
-        audio.load();
-        audio.play();
-        const renderFrame = () => {
-            requestAnimationFrame(renderFrame);
-            this.analyser.getByteFrequencyData(this.dataArray);
-            this.circularMode.drawAudioThumbnail(this.ctx, this.canvas);
-            this.circularMode.draw(this.dataArray, this.color);
-        };
+
+        this.audio.load();
+        // this.audio.play();
+
+        this.renderFrame();
     }
 
-    renderFrame() {}
+    renderFrame() {
+        requestAnimationFrame(() => this.renderFrame());
+
+        this.analyser.getByteFrequencyData(this.dataArray);
+
+        this.drawAudioThumbnail(this.ctx, this.canvas, this.thumbnail);
+
+        this.drawAudioInfo();
+        this.circularMode.draw(this.dataArray, this.color);
+    }
+
+    drawAudioThumbnail(ctx, canvas, img, grayScale = false) {
+        if (grayScale) {
+        }
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    }
+
+    drawAudioInfo() {
+        const _currentTime = {
+            m: pad(parseInt(this.audio.currentTime / 60, 10), 2),
+            s: pad(parseInt(this.audio.currentTime % 60, 10), 2)
+        };
+
+        const _duration = {
+            m: pad(parseInt(this.audio.duration / 60, 10), 2),
+            s: pad(parseInt(this.audio.duration % 60, 10), 2)
+        };
+
+        this.ctx.font = "16px Arial";
+        this.ctx.fillText(_currentTime.m + ":" + _currentTime.s, 5, 20);
+        this.ctx.fillText(
+            _duration.m + ":" + _duration.s,
+            this.canvas.width -
+                this.ctx.measureText(_duration.m + ":" + _duration.s).width -
+                5,
+            20
+        );
+
+        if (this.canvas.width > this.textX) {
+            this.textX++;
+        } else {
+            this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+        }
+
+        this.ctx.fillText(this.audioTitle, this.textX, this.canvas.height - 10);
+    }
+
+    playPausePlayer() {
+        if (this.audio.ended || this.audio.paused) {
+            this.audio.play();
+        } else {
+            this.audio.pause();
+        }
+    }
+
+    handleMouse(e) {
+        e.preventDefault();
+        this.playPausePlayer();
+    }
+
+    getAverageRGB(imgEl) {
+        var blockSize = 5,
+            defaultRGB = { r: 50, g: 50, b: 50 },
+            canvas = document.createElement("canvas"),
+            context = canvas.getContext && canvas.getContext("2d"),
+            data,
+            width,
+            height,
+            i = -4,
+            length,
+            rgb = { r: 0, g: 0, b: 0 },
+            count = 0;
+
+        if (!context) {
+            return defaultRGB;
+        }
+
+        height = canvas.height =
+            imgEl.naturalHeight || imgEl.offsetHeight || imgEl.height;
+        width = canvas.width =
+            imgEl.naturalWidth || imgEl.offsetWidth || imgEl.width;
+
+        context.drawImage(imgEl, 0, 0);
+
+        try {
+            data = context.getImageData(0, 0, width, height);
+        } catch (e) {
+            console.error("LIGHTAUDIO: image is in another domain");
+            return defaultRGB;
+        }
+
+        length = data.data.length;
+
+        while ((i += blockSize * 4) < length) {
+            ++count;
+            rgb.r += data.data[i];
+            rgb.g += data.data[i + 1];
+            rgb.b += data.data[i + 2];
+        }
+
+        rgb.r = ~~(rgb.r / count);
+        rgb.g = ~~(rgb.g / count);
+        rgb.b = ~~(rgb.b / count);
+
+        return rgb;
+    }
+}
+
+function pad(num, size) {
+    var s = num + "";
+    while (s.length < size) s = "0" + s;
+    return s;
 }

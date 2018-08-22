@@ -1,3 +1,11 @@
+.lightaudio__container canvas {
+  cursor: pointer;
+  -moz-border-radius: 10px;
+  -o-border-radius: 10px;
+  -ms-border-radius: 10px;
+  -webkit-border-radius: 10px;
+  border-radius: 10px; }
+
 .audio {
-  width: 640px;
-  height: 640px; }
+  width: 250px;
+  height: 250px; }

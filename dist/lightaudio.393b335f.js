@@ -181,27 +181,23 @@ var _createClass = function () { function defineProperties(target, props) { for 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
 var CircularMode = exports.CircularMode = function () {
-    function CircularMode(canvas) {
+    function CircularMode(options) {
         _classCallCheck(this, CircularMode);
 
-        this.canvas = canvas;
-        this.ctx = this.canvas.getContext("2d");
+        this.canvas = options.canvas;
+        this.ctx = options.ctx;
+        this.color = options.color;
     }
 
     _createClass(CircularMode, [{
         key: "draw",
         value: function draw(data) {
-            var thumbnail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "./thumbnail.jpg";
-
             var start_angle = 0;
             for (var dataValue in data) {
                 var val = data[dataValue];
                 var slice_angle = 2 * Math.PI * val / 360;
-                var color = "#F6F49D";
 
-                this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.5 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, color);
-
-                this.drawAudioThumbnail(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.4 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, thumbnail);
+                this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.7 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, this.color);
 
                 start_angle += slice_angle;
             }
@@ -215,16 +211,6 @@ var CircularMode = exports.CircularMode = function () {
             ctx.arc(centerX, centerY, radius, startAngle, endAngle);
             ctx.closePath();
             ctx.fill();
-        }
-    }, {
-        key: "drawAudioThumbnail",
-        value: function drawAudioThumbnail(ctx, canvas, img) {
-            var _img = new Image();
-
-            _img.onload = function () {
-                ctx.drawImage(_img, 0, 0, canvas.width, canvas.height);
-            };
-            _img.src = img;
         }
     }]);
 
@@ -249,8 +235,18 @@ var LightAudio = exports.LightAudio = function () {
         _classCallCheck(this, LightAudio);
 
         this.parent = options.parent;
-        this.color = options.color || "#f1c40f";
+        this.audioTitle = options.audioTitle || "";
+        var _thumb = options.thumbnail || this.parent.querySelector("img");
+        var _audio = this.parent.querySelector("audio");
+
+        this.removeUnsusedElements(_thumb, _audio);
+
+        var _rgb = this.getAverageRGB(this.thumbnail);
+        this.color = options.color || "rgba(" + (255 - _rgb.r) + ", " + (255 - _rgb.g) + ", " + (255 - _rgb.b) + ", 0.7)";
+
+        this.thumbnail.style.display = "none";
         this.init();
+        this.textX = 5;
     }
 
     _createClass(LightAudio, [{
@@ -260,46 +256,175 @@ var LightAudio = exports.LightAudio = function () {
             this.initAudio();
         }
     }, {
+        key: "removeUnsusedElements",
+        value: function removeUnsusedElements(_thumb, _audio) {
+            this.thumbnail = _thumb.cloneNode(true);
+            this.parent.removeChild(_thumb);
+
+            this.audio = _audio.cloneNode(true);
+            this.parent.removeChild(_audio);
+        }
+    }, {
         key: "initCanvas",
         value: function initCanvas() {
-            var canvas = document.createElement("CANVAS");
-            this.ctx = canvas.getContext("2d");
-            this.circularMode = new _CircularMode.CircularMode(canvas);
-            canvas.width = this.parent.innerWidth;
-            canvas.height = this.parent.innerHeight;
-            this.parent.appendChild(canvas);
+            var _this = this;
+
+            this.canvas = document.createElement("CANVAS");
+            this.ctx = this.canvas.getContext("2d");
+            this.circularMode = new _CircularMode.CircularMode({
+                canvas: this.canvas,
+                ctx: this.ctx,
+                color: this.color
+            });
+            this.canvas.width = this.parent.offsetWidth;
+            this.canvas.height = this.parent.offsetHeight;
+            this.parent.appendChild(this.canvas);
+
+            this.canvas.addEventListener("mousedown", function (e) {
+                _this.handleMouse(e);
+            });
         }
     }, {
         key: "initAudio",
         value: function initAudio() {
-            var _this = this;
+            this.audio.controls = false;
 
-            var audio = document.querySelector("audio");
-            // audio.controls = false; // TODO
             var audioContext = new AudioContext() || window.webkitAudioContext;
-            var src = audioContext.createMediaElementSource(audio);
+            var src = audioContext.createMediaElementSource(this.audio);
             this.analyser = audioContext.createAnalyser();
             src.connect(this.analyser);
             this.analyser.connect(audioContext.destination);
             this.analyser.fftSize = 256;
             var bufferLength = this.analyser.frequencyBinCount;
+
             this.dataArray = new Uint8Array(bufferLength);
-            audio.load();
-            audio.play();
-            var renderFrame = function renderFrame() {
-                requestAnimationFrame(renderFrame);
-                _this.analyser.getByteFrequencyData(_this.dataArray);
-                _this.circularMode.drawAudioThumbnail(_this.ctx, _this.canvas);
-                _this.circularMode.draw(_this.dataArray, _this.color);
-            };
+
+            this.audio.load();
+            // this.audio.play();
+
+            this.renderFrame();
         }
     }, {
         key: "renderFrame",
-        value: function renderFrame() {}
+        value: function renderFrame() {
+            var _this2 = this;
+
+            requestAnimationFrame(function () {
+                return _this2.renderFrame();
+            });
+
+            this.analyser.getByteFrequencyData(this.dataArray);
+
+            this.drawAudioThumbnail(this.ctx, this.canvas, this.thumbnail);
+
+            this.drawAudioInfo();
+            this.circularMode.draw(this.dataArray, this.color);
+        }
+    }, {
+        key: "drawAudioThumbnail",
+        value: function drawAudioThumbnail(ctx, canvas, img) {
+            var grayScale = arguments.length > 3 && arguments[3] !== undefined ? arguments[3] : false;
+
+            if (grayScale) {}
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        }
+    }, {
+        key: "drawAudioInfo",
+        value: function drawAudioInfo() {
+            var _currentTime = {
+                m: pad(parseInt(this.audio.currentTime / 60, 10), 2),
+                s: pad(parseInt(this.audio.currentTime % 60, 10), 2)
+            };
+
+            var _duration = {
+                m: pad(parseInt(this.audio.duration / 60, 10), 2),
+                s: pad(parseInt(this.audio.duration % 60, 10), 2)
+            };
+
+            this.ctx.font = "16px Arial";
+            this.ctx.fillText(_currentTime.m + ":" + _currentTime.s, 5, 20);
+            this.ctx.fillText(_duration.m + ":" + _duration.s, this.canvas.width - this.ctx.measureText(_duration.m + ":" + _duration.s).width - 5, 20);
+
+            if (this.canvas.width > this.textX) {
+                this.textX++;
+            } else {
+                this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+            }
+
+            this.ctx.fillText(this.audioTitle, this.textX, this.canvas.height - 10);
+        }
+    }, {
+        key: "playPausePlayer",
+        value: function playPausePlayer() {
+            if (this.audio.ended || this.audio.paused) {
+                this.audio.play();
+            } else {
+                this.audio.pause();
+            }
+        }
+    }, {
+        key: "handleMouse",
+        value: function handleMouse(e) {
+            e.preventDefault();
+            this.playPausePlayer();
+        }
+    }, {
+        key: "getAverageRGB",
+        value: function getAverageRGB(imgEl) {
+            var blockSize = 5,
+                defaultRGB = { r: 50, g: 50, b: 50 },
+                canvas = document.createElement("canvas"),
+                context = canvas.getContext && canvas.getContext("2d"),
+                data,
+                width,
+                height,
+                i = -4,
+                length,
+                rgb = { r: 0, g: 0, b: 0 },
+                count = 0;
+
+            if (!context) {
+                return defaultRGB;
+            }
+
+            height = canvas.height = imgEl.naturalHeight || imgEl.offsetHeight || imgEl.height;
+            width = canvas.width = imgEl.naturalWidth || imgEl.offsetWidth || imgEl.width;
+
+            context.drawImage(imgEl, 0, 0);
+
+            try {
+                data = context.getImageData(0, 0, width, height);
+            } catch (e) {
+                console.error("LIGHTAUDIO: image is in another domain");
+                return defaultRGB;
+            }
+
+            length = data.data.length;
+
+            while ((i += blockSize * 4) < length) {
+                ++count;
+                rgb.r += data.data[i];
+                rgb.g += data.data[i + 1];
+                rgb.b += data.data[i + 2];
+            }
+
+            rgb.r = ~~(rgb.r / count);
+            rgb.g = ~~(rgb.g / count);
+            rgb.b = ~~(rgb.b / count);
+
+            return rgb;
+        }
     }]);
 
     return LightAudio;
 }();
+
+function pad(num, size) {
+    var s = num + "";
+    while (s.length < size) {
+        s = "0" + s;
+    }return s;
+}
 },{"./CircularMode":"js\\CircularMode.js"}],"index.js":[function(require,module,exports) {
 "use strict";
 
@@ -319,35 +444,9 @@ try {
 
         var la = new _LightAudio.LightAudio({
             parent: laElem,
-            color: "#f1c40f"
+            audioTitle: "Mohsen yeganeh - To Hata To Hata To Hata"
         });
     }
-
-    // file.onchange = function() {
-    //     const files = this.files;
-    //     audio.src = URL.createObjectURL(files[0]);
-
-    //     const audioContext = new AudioContext() || window.webkitAudioContext;
-    //     const src = audioContext.createMediaElementSource(audio);
-    //     const analyser = audioContext.createAnalyser();
-    //     src.connect(analyser);
-    //     analyser.connect(audioContext.destination);
-    //     analyser.fftSize = 256;
-    //     const bufferLength = analyser.frequencyBinCount;
-    //     const dataArray = new Uint8Array(bufferLength);
-
-    //     function renderFrame() {
-    //         requestAnimationFrame(renderFrame);
-
-    //         analyser.getByteFrequencyData(dataArray);
-
-    //         circularMode.drawAudioThumbnail(ctx, canvas);
-    //         circularMode.draw(dataArray, "#f1c40f");
-    //     }
-    //     audio.load();
-    //     audio.play();
-    //     renderFrame();
-    // };
 } catch (err) {
     _didIteratorError = true;
     _iteratorError = err;
@@ -391,7 +490,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53020' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '49886' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
