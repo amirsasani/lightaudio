@@ -345,10 +345,20 @@ var LightAudio = exports.LightAudio = function () {
             this.ctx.fillText(_currentTime.m + ":" + _currentTime.s, 5, 20);
             this.ctx.fillText(_duration.m + ":" + _duration.s, this.canvas.width - this.ctx.measureText(_duration.m + ":" + _duration.s).width - 5, 20);
 
-            if (this.canvas.width > this.textX) {
-                this.textX++;
+            if (this.audio.ended || this.audio.paused) {
+                if (this.canvas.width > this.textX) {
+                    this.textX++;
+                } else {
+                    this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+                }
             } else {
-                this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+                var centerPosition = (this.canvas.width - this.ctx.measureText(this.audioTitle).width) / 2;
+
+                if (centerPosition <= this.textX) {
+                    this.textX--;
+                } else {
+                    this.textX++;
+                }
             }
 
             this.ctx.fillText(this.audioTitle, this.textX, this.canvas.height - 10);
@@ -444,7 +454,7 @@ try {
 
         var la = new _LightAudio.LightAudio({
             parent: laElem,
-            audioTitle: "Mohsen yeganeh - To Hata To Hata To Hata"
+            audioTitle: "Mohsen yeganeh - Tanhaei"
         });
     }
 } catch (err) {
@@ -488,7 +498,7 @@ module.bundle.Module = Module;
 
 var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
-  var hostname = '' || location.hostname;
+  var hostname = undefined || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
   var ws = new WebSocket(protocol + '://' + hostname + ':' + '54947' + '/');
   ws.onmessage = function (event) {

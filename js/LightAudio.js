@@ -106,10 +106,23 @@ export class LightAudio {
             20
         );
 
-        if (this.canvas.width > this.textX) {
-            this.textX++;
+        if (this.audio.ended || this.audio.paused) {
+            if (this.canvas.width > this.textX) {
+                this.textX++;
+            } else {
+                this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+            }
         } else {
-            this.textX = 5 - this.ctx.measureText(this.audioTitle).width;
+            const centerPosition =
+                (this.canvas.width -
+                    this.ctx.measureText(this.audioTitle).width) /
+                2;
+
+            if (centerPosition <= this.textX) {
+                this.textX--;
+            } else {
+                this.textX++;
+            }
         }
 
         this.ctx.fillText(this.audioTitle, this.textX, this.canvas.height - 10);

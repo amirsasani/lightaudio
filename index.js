@@ -6,6 +6,6 @@ const lightaudio = document.querySelectorAll(".lightaudio__container");
 for (let laElem of lightaudio) {
     const la = new LightAudio({
         parent: laElem,
-        audioTitle: "Mohsen yeganeh - To Hata To Hata To Hata"
+        audioTitle: "Mohsen yeganeh - Tanhaei"
     });
 }
