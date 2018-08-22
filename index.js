@@ -27,9 +27,8 @@ window.onload = () => {
             requestAnimationFrame(renderFrame);
 
             analyser.getByteFrequencyData(dataArray);
-            ctx.fillStyle = "#666";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
+            circularMode.drawAudioThumbnail(ctx, canvas);
             circularMode.draw(dataArray, "#f1c40f");
         }
         audio.load();
@@ -44,7 +43,7 @@ class CircularMode {
         this.ctx = this.canvas.getContext("2d");
     }
 
-    draw(data) {
+    draw(data, thumbnail = "./thumbnail.jpg") {
         let start_angle = 0;
         for (let dataValue in data) {
             const val = data[dataValue];
@@ -70,6 +69,25 @@ class CircularMode {
                 color
             );
 
+            this.drawAudioThumbnail(
+                this.ctx,
+                this.canvas.width / 2,
+                this.canvas.height / 2,
+                0.4 *
+                    Math.min(
+                        this.canvas.width / 2,
+                        this.canvas.height / 2,
+                        Math.max(
+                            (this.canvas.width / 2, this.canvas.height / 2) -
+                                val,
+                            0
+                        )
+                    ),
+                start_angle,
+                start_angle + slice_angle,
+                thumbnail
+            );
+
             start_angle += slice_angle;
         }
     }
@@ -83,28 +101,12 @@ class CircularMode {
         ctx.fill();
     }
 
-    drawAudioThumbnail(
-        ctx,
-        centerX,
-        centerY,
-        radius,
-        startAngle,
-        endAngle,
-        img
-    ) {
-        ctx.save();
-        ctx.moveTo(centerX, centerY);
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.closePath();
-        ctx.clip();
+    drawAudioThumbnail(ctx, canvas, img) {
+        const _img = new Image();
 
-        ctx.drawImage(img, 0, 0, 50, 50);
-
-        ctx.beginPath();
-        ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-        ctx.clip();
-        ctx.closePath();
-        ctx.restore();
+        _img.onload = () => {
+            ctx.drawImage(_img, 0, 0, canvas.width, canvas.height);
+        };
+        _img.src = img;
     }
 }

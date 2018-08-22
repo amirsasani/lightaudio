@@ -1,25 +1,7 @@
-#thefile {
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 100;
+.lightaudio__container {
 }
 
-#canvas {
-    position: absolute;
-    left: 0;
-    top: 0;
-    right: 0;
-    bottom: 0;
-    width: 100%;
-    height: 100%;
-    border: 2px solid #ff0ff0;
-    margin: 2px;
-}
-
-audio {
-    position: fixed;
-    left: 10px;
-    bottom: 10px;
-    width: calc(100% - 20px);
+.audio {
+    width: 640px;
+    height: 640px;
 }

@@ -227,6 +227,8 @@ var CircularMode = function () {
     _createClass(CircularMode, [{
         key: "draw",
         value: function draw(data) {
+            var thumbnail = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : "./thumbnail.jpg";
+
             var start_angle = 0;
             for (var dataValue in data) {
                 var val = data[dataValue];
@@ -234,6 +236,8 @@ var CircularMode = function () {
                 var color = "#F6F49D";
 
                 this.drawPieSlice(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.5 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, color);
+
+                this.drawAudioThumbnail(this.ctx, this.canvas.width / 2, this.canvas.height / 2, 0.4 * Math.min(this.canvas.width / 2, this.canvas.height / 2, Math.max((this.canvas.width / 2, this.canvas.height / 2) - val, 0)), start_angle, start_angle + slice_angle, thumbnail);
 
                 start_angle += slice_angle;
             }
@@ -251,20 +255,23 @@ var CircularMode = function () {
     }, {
         key: "drawAudioThumbnail",
         value: function drawAudioThumbnail(ctx, centerX, centerY, radius, startAngle, endAngle, img) {
-            ctx.save();
-            ctx.moveTo(centerX, centerY);
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.closePath();
-            ctx.clip();
+            var _img = new Image();
 
-            ctx.drawImage(img, 0, 0, 50, 50);
+            _img.onload = function () {
+                var naturalWidth = _img.naturalWidth;
+                var naturalHeight = _img.naturalHeight;
 
-            ctx.beginPath();
-            ctx.arc(centerX, centerY, radius, startAngle, endAngle);
-            ctx.clip();
-            ctx.closePath();
-            ctx.restore();
+                var imgAndCircleWidthOffset = Math.min(0, naturalWidth - (radius + radius));
+                var imgAndCircleHeightOffset = Math.min(0, naturalHeight - (radius + radius));
+
+                ctx.beginPath();
+                ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
+                ctx.clip();
+                ctx.stroke();
+                ctx.closePath();
+                ctx.drawImage(_img, centerX - naturalWidth / 2, centerY - naturalHeight / 2);
+            };
+            _img.src = img;
         }
     }]);
 
@@ -297,9 +304,9 @@ module.bundle.Module = Module;
 
 var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
-  var hostname = undefined || location.hostname;
+  var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53484' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60144' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
