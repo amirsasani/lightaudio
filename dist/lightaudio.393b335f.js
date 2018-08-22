@@ -169,54 +169,18 @@ module.exports = reloadCSS;
 var reloadCSS = require('_css_loader');
 module.hot.dispose(reloadCSS);
 module.hot.accept(reloadCSS);
-},{"_css_loader":"..\\..\\AppData\\Roaming\\npm\\node_modules\\parcel-bundler\\src\\builtins\\css-loader.js"}],"index.js":[function(require,module,exports) {
+},{"_css_loader":"..\\..\\AppData\\Roaming\\npm\\node_modules\\parcel-bundler\\src\\builtins\\css-loader.js"}],"js\\CircularMode.js":[function(require,module,exports) {
 "use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
-require("./css/style.scss");
-
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
 
-window.onload = function () {
-    var file = document.getElementById("thefile");
-    var audio = document.getElementById("audio");
-    var canvas = document.getElementById("canvas");
-    var ctx = canvas.getContext("2d");
-
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-
-    var circularMode = new CircularMode(canvas);
-
-    file.onchange = function () {
-        var files = this.files;
-        audio.src = URL.createObjectURL(files[0]);
-        var context = new AudioContext() || window.webkitAudioContext;
-        var src = context.createMediaElementSource(audio);
-        var analyser = context.createAnalyser();
-        src.connect(analyser);
-        analyser.connect(context.destination);
-        analyser.fftSize = 256;
-        var bufferLength = analyser.frequencyBinCount;
-        var dataArray = new Uint8Array(bufferLength);
-
-        function renderFrame() {
-            requestAnimationFrame(renderFrame);
-
-            analyser.getByteFrequencyData(dataArray);
-            ctx.fillStyle = "#666";
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            circularMode.draw(dataArray, "#f1c40f");
-        }
-        audio.load();
-        audio.play();
-        renderFrame();
-    };
-};
-
-var CircularMode = function () {
+var CircularMode = exports.CircularMode = function () {
     function CircularMode(canvas) {
         _classCallCheck(this, CircularMode);
 
@@ -254,22 +218,11 @@ var CircularMode = function () {
         }
     }, {
         key: "drawAudioThumbnail",
-        value: function drawAudioThumbnail(ctx, centerX, centerY, radius, startAngle, endAngle, img) {
+        value: function drawAudioThumbnail(ctx, canvas, img) {
             var _img = new Image();
 
             _img.onload = function () {
-                var naturalWidth = _img.naturalWidth;
-                var naturalHeight = _img.naturalHeight;
-
-                var imgAndCircleWidthOffset = Math.min(0, naturalWidth - (radius + radius));
-                var imgAndCircleHeightOffset = Math.min(0, naturalHeight - (radius + radius));
-
-                ctx.beginPath();
-                ctx.arc(centerX, centerY, radius, startAngle, endAngle, false);
-                ctx.clip();
-                ctx.stroke();
-                ctx.closePath();
-                ctx.drawImage(_img, centerX - naturalWidth / 2, centerY - naturalHeight / 2);
+                ctx.drawImage(_img, 0, 0, canvas.width, canvas.height);
             };
             _img.src = img;
         }
@@ -277,7 +230,139 @@ var CircularMode = function () {
 
     return CircularMode;
 }();
-},{"./css/style.scss":"css\\style.scss"}],"..\\..\\AppData\\Roaming\\npm\\node_modules\\parcel-bundler\\src\\builtins\\hmr-runtime.js":[function(require,module,exports) {
+},{}],"js\\LightAudio.js":[function(require,module,exports) {
+"use strict";
+
+Object.defineProperty(exports, "__esModule", {
+    value: true
+});
+exports.LightAudio = undefined;
+
+var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
+
+var _CircularMode = require("./CircularMode");
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+var LightAudio = exports.LightAudio = function () {
+    function LightAudio(options) {
+        _classCallCheck(this, LightAudio);
+
+        this.parent = options.parent;
+        this.color = options.color || "#f1c40f";
+        this.init();
+    }
+
+    _createClass(LightAudio, [{
+        key: "init",
+        value: function init() {
+            this.initCanvas();
+            this.initAudio();
+        }
+    }, {
+        key: "initCanvas",
+        value: function initCanvas() {
+            var canvas = document.createElement("CANVAS");
+            this.ctx = canvas.getContext("2d");
+            this.circularMode = new _CircularMode.CircularMode(canvas);
+            canvas.width = this.parent.innerWidth;
+            canvas.height = this.parent.innerHeight;
+            this.parent.appendChild(canvas);
+        }
+    }, {
+        key: "initAudio",
+        value: function initAudio() {
+            var _this = this;
+
+            var audio = document.querySelector("audio");
+            // audio.controls = false; // TODO
+            var audioContext = new AudioContext() || window.webkitAudioContext;
+            var src = audioContext.createMediaElementSource(audio);
+            this.analyser = audioContext.createAnalyser();
+            src.connect(this.analyser);
+            this.analyser.connect(audioContext.destination);
+            this.analyser.fftSize = 256;
+            var bufferLength = this.analyser.frequencyBinCount;
+            this.dataArray = new Uint8Array(bufferLength);
+            audio.load();
+            audio.play();
+            var renderFrame = function renderFrame() {
+                requestAnimationFrame(renderFrame);
+                _this.analyser.getByteFrequencyData(_this.dataArray);
+                _this.circularMode.drawAudioThumbnail(_this.ctx, _this.canvas);
+                _this.circularMode.draw(_this.dataArray, _this.color);
+            };
+        }
+    }, {
+        key: "renderFrame",
+        value: function renderFrame() {}
+    }]);
+
+    return LightAudio;
+}();
+},{"./CircularMode":"js\\CircularMode.js"}],"index.js":[function(require,module,exports) {
+"use strict";
+
+require("./css/style.scss");
+
+var _LightAudio = require("./js/LightAudio");
+
+var lightaudio = document.querySelectorAll(".lightaudio__container");
+
+var _iteratorNormalCompletion = true;
+var _didIteratorError = false;
+var _iteratorError = undefined;
+
+try {
+    for (var _iterator = lightaudio[Symbol.iterator](), _step; !(_iteratorNormalCompletion = (_step = _iterator.next()).done); _iteratorNormalCompletion = true) {
+        var laElem = _step.value;
+
+        var la = new _LightAudio.LightAudio({
+            parent: laElem,
+            color: "#f1c40f"
+        });
+    }
+
+    // file.onchange = function() {
+    //     const files = this.files;
+    //     audio.src = URL.createObjectURL(files[0]);
+
+    //     const audioContext = new AudioContext() || window.webkitAudioContext;
+    //     const src = audioContext.createMediaElementSource(audio);
+    //     const analyser = audioContext.createAnalyser();
+    //     src.connect(analyser);
+    //     analyser.connect(audioContext.destination);
+    //     analyser.fftSize = 256;
+    //     const bufferLength = analyser.frequencyBinCount;
+    //     const dataArray = new Uint8Array(bufferLength);
+
+    //     function renderFrame() {
+    //         requestAnimationFrame(renderFrame);
+
+    //         analyser.getByteFrequencyData(dataArray);
+
+    //         circularMode.drawAudioThumbnail(ctx, canvas);
+    //         circularMode.draw(dataArray, "#f1c40f");
+    //     }
+    //     audio.load();
+    //     audio.play();
+    //     renderFrame();
+    // };
+} catch (err) {
+    _didIteratorError = true;
+    _iteratorError = err;
+} finally {
+    try {
+        if (!_iteratorNormalCompletion && _iterator.return) {
+            _iterator.return();
+        }
+    } finally {
+        if (_didIteratorError) {
+            throw _iteratorError;
+        }
+    }
+}
+},{"./css/style.scss":"css\\style.scss","./js/LightAudio":"js\\LightAudio.js"}],"..\\..\\AppData\\Roaming\\npm\\node_modules\\parcel-bundler\\src\\builtins\\hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 
@@ -306,7 +391,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = '' || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + '60144' + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + '53020' + '/');
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
 
