@@ -1,6 +1,6 @@
 {
     "name": "lightaudio",
-    "version": "1.0.0",
+    "version": "1.1.1",
     "description": "a lightweight audio player",
     "main": "index.js",
     "scripts": {
@@ -8,9 +8,17 @@
         "watch": "parcel watch index.html",
         "build": "parcel build index.html --no-source-maps --experimental-scope-hoisting --out-dir build"
     },
-    "author": "Amir Sasani",
+    "author": {
+        "name": "Amir Sasani",
+        "url": "https://github.com/amirsasani"
+    },
+    "homepage": "https://github.com/amirsasani/lightaudio#readme",
     "license": "MIT",
     "dependencies": {},
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/amirsasani/lightaudio"
+    },
     "devDependencies": {
         "cssnano": "^4.0.5",
         "node-sass": "^4.9.3"

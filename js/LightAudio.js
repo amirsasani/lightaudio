@@ -7,6 +7,9 @@ export class LightAudio {
         const _thumb = options.thumbnail || this.parent.querySelector("img");
         const _audio = this.parent.querySelector("audio");
 
+        if (!this.parent.classList.contains("lightaudio__parent"))
+            this.parent.classList.add("lightaudio__parent");
+
         this.removeUnsusedElements(_thumb, _audio);
 
         const _rgb = this.getAverageRGB(this.thumbnail);
@@ -46,6 +49,10 @@ export class LightAudio {
 
         this.canvas.addEventListener("mousedown", e => {
             this.handleMouse(e);
+        });
+
+        this.canvas.addEventListener("mousemove", e => {
+            this.canvas.style.cursor = "pointer";
         });
     }
 
@@ -101,8 +108,8 @@ export class LightAudio {
         this.ctx.fillText(
             _duration.m + ":" + _duration.s,
             this.canvas.width -
-                this.ctx.measureText(_duration.m + ":" + _duration.s).width -
-                5,
+            this.ctx.measureText(_duration.m + ":" + _duration.s).width -
+            5,
             20
         );
 
